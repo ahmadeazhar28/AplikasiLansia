@@ -4,18 +4,14 @@ import static android.content.ContentValues.TAG;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -28,13 +24,11 @@ import java.util.Map;
 
 public class ReminderRepository {
     private FirebaseAuth mAuth;
-    private DatabaseReference mDatabase;
-    private StorageReference mStorage;
+    private FirebaseFirestore db;
 
     public ReminderRepository() {
         mAuth = FirebaseAuth.getInstance();
-        mDatabase = FirebaseDatabase.getInstance().getReference();
-        mStorage = FirebaseStorage.getInstance().getReference("reminders");
+        db = FirebaseFirestore.getInstance();
     }
 
     public MutableLiveData<List<Reminder>> fetchReminder() {
@@ -42,70 +36,72 @@ public class ReminderRepository {
         FirebaseUser firebaseUser = mAuth.getCurrentUser();
 
         if (firebaseUser != null) {
-            DatabaseReference userRef = mDatabase.child("reminders").child(firebaseUser.getUid());
+            String userId = firebaseUser.getUid();
+            db.collection("users").document(userId).collection("reminders")
+                    .get()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            QuerySnapshot snapshot = task.getResult();
+                            List<Reminder> reminders = new ArrayList<>();
+                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+                            Date now = new Date();
 
-            userRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    List<Reminder> reminders = new ArrayList<>();
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-                    Date now = new Date();
+                            for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                                String id = doc.getId();
+                                String title = doc.getString("title");
+                                String day = doc.getString("day");
+                                String time = doc.getString("time");
+                                String desc = doc.getString("desc");
+                                String timestamp = doc.getString("timestamp");
+                                Long iconLong = doc.getLong("icon");
+                                Integer icon = iconLong != null ? iconLong.intValue() : 0;
 
-                    for (DataSnapshot reminderSnapshot : snapshot.getChildren()) {
-                        String id = reminderSnapshot.getKey(); // Get the ID from the snapshot key
-                        String userId = reminderSnapshot.child("userId").getValue(String.class);
-                        if (userId.equals(firebaseUser.getUid())) {
-                            String title = reminderSnapshot.child("title").getValue(String.class);
-                            String day = reminderSnapshot.child("day").getValue(String.class);
-                            String time = reminderSnapshot.child("time").getValue(String.class);
-                            String desc = reminderSnapshot.child("desc").getValue(String.class);
-                            String timestamp = reminderSnapshot.child("timestamp").getValue(String.class);
-                            Integer icon = reminderSnapshot.child("icon").getValue(Integer.class);
-
-                            Reminder reminder = new Reminder(userId, id, title, day, time, desc, timestamp, icon);
-                            reminders.add(reminder);
-                        }
-                    }
-                    reminders.removeIf(reminder -> {
-                        try {
-                            Date reminderDate = sdf.parse(reminder.getTimestamp());
-                            return reminderDate.before(now);
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                            return false;
+                                Reminder reminder = new Reminder(userId, id, title, day, time, desc, timestamp, icon);
+                                reminders.add(reminder);
+                            }
+                            reminders.removeIf(reminder -> {
+                                try {
+                                    Date reminderDate = sdf.parse(reminder.getTimestamp());
+                                    return reminderDate.before(now);
+                                } catch (ParseException e) {
+                                    e.printStackTrace();
+                                    return false;
+                                }
+                            });
+                            reminderLiveData.setValue(reminders);
+                        } else {
+                            Log.e("ReminderRepository", "Firestore error: ", task.getException());
+                            reminderLiveData.setValue(null);
                         }
                     });
-                    reminderLiveData.setValue(reminders); // Set LiveData value here
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-                    Log.e("ReminderRepository", "Database error: ", error.toException());
-                    reminderLiveData.setValue(null);
-                }
-            });
         }
 
         return reminderLiveData;
     }
 
-
-
     public void createReminder(String title, String day, String time, String desc, String timestamp, Integer icon, MutableLiveData<FirebaseUser> reminderLiveData, MutableLiveData<String> errorLiveData) {
         FirebaseUser firebaseUser = mAuth.getCurrentUser();
         if (firebaseUser != null) {
             String userId = firebaseUser.getUid();
-            Log.d(TAG, "User ID: " + userId); // Log the user ID to verify it's correct
-            Reminder reminder = new Reminder(userId, null ,title, day, time, desc, timestamp, icon);
-            DatabaseReference remindersRef = mDatabase.child("reminders").child(userId).push();
-            remindersRef.setValue(reminder)
+            Log.d(TAG, "User ID: " + userId);
+
+            DocumentReference newReminderRef = db.collection("users").document(userId).collection("reminders").document();
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("userId", userId);
+            data.put("title", title);
+            data.put("day", day);
+            data.put("time", time);
+            data.put("desc", desc);
+            data.put("timestamp", timestamp);
+            data.put("icon", icon);
+
+            newReminderRef.set(data)
                     .addOnSuccessListener(aVoid -> {
-                        // Handle success
                         Log.d(TAG, "Reminder added successfully");
-                        reminderLiveData.postValue(firebaseUser); // Update the live data with the user
+                        reminderLiveData.postValue(firebaseUser);
                     })
                     .addOnFailureListener(e -> {
-                        // Handle failure
                         Log.e(TAG, "Failed to add reminder: " + e.getMessage());
                         errorLiveData.postValue("Failed to add reminder: " + e.getMessage());
                     });
@@ -113,13 +109,13 @@ public class ReminderRepository {
             errorLiveData.postValue("User not authenticated");
         }
     }
+
     public void editReminder(String reminderId, String title, String day, String time, String desc, String timestamp, Integer icon, MutableLiveData<String> errorLiveData, Runnable onSuccess) {
         FirebaseUser firebaseUser = mAuth.getCurrentUser();
         if (firebaseUser != null) {
             String userId = firebaseUser.getUid();
-            DatabaseReference reminderRef = mDatabase.child("reminders").child(userId).child(reminderId);
+            DocumentReference reminderRef = db.collection("users").document(userId).collection("reminders").document(reminderId);
 
-            // Create a map of updated values
             Map<String, Object> updatedValues = new HashMap<>();
             updatedValues.put("title", title);
             updatedValues.put("day", day);
@@ -128,11 +124,11 @@ public class ReminderRepository {
             updatedValues.put("timestamp", timestamp);
             updatedValues.put("icon", icon);
 
-            reminderRef.updateChildren(updatedValues)
+            reminderRef.update(updatedValues)
                     .addOnSuccessListener(aVoid -> {
                         Log.d(TAG, "Reminder updated successfully");
                         if (onSuccess != null) {
-                            onSuccess.run(); // Notify that the update was successful
+                            onSuccess.run();
                         }
                     })
                     .addOnFailureListener(e -> {
@@ -147,17 +143,17 @@ public class ReminderRepository {
     public interface OnReminderDeletedCallback {
         void onReminderDeleted();
     }
+
     public void deleteReminder(String reminderId, MutableLiveData<String> errorLiveData, OnReminderDeletedCallback callback) {
         FirebaseUser firebaseUser = mAuth.getCurrentUser();
         if (firebaseUser != null) {
             String userId = firebaseUser.getUid();
-            DatabaseReference reminderRef = mDatabase.child("reminders").child(userId).child(reminderId);
+            DocumentReference reminderRef = db.collection("users").document(userId).collection("reminders").document(reminderId);
 
-            reminderRef.removeValue()
+            reminderRef.delete()
                     .addOnSuccessListener(aVoid -> {
                         Log.d(TAG, "Reminder deleted successfully");
-//                        fetchReminder();
-                        callback.onReminderDeleted(); // Trigger the callback on successful deletion
+                        callback.onReminderDeleted();
                     })
                     .addOnFailureListener(e -> {
                         Log.e(TAG, "Failed to delete reminder: " + e.getMessage());
@@ -167,6 +163,4 @@ public class ReminderRepository {
             errorLiveData.postValue("User not authenticated");
         }
     }
-
-
 }

@@ -11,11 +11,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
@@ -26,12 +23,12 @@ import java.util.Map;
 
 public class UserRepository {
     private FirebaseAuth mAuth;
-    private DatabaseReference mDatabase;
-    private StorageReference mStorage; // Firebase Storage reference
+    private FirebaseFirestore mFirestore;
+    private StorageReference mStorage; // Firebase Storage reference (tetap, tidak dimigrasi)
 
     public UserRepository() {
         mAuth = FirebaseAuth.getInstance();
-        mDatabase = FirebaseDatabase.getInstance().getReference();
+        mFirestore = FirebaseFirestore.getInstance();
         mStorage = FirebaseStorage.getInstance().getReference("profile_images"); // Storage reference
     }
 
@@ -40,39 +37,44 @@ public class UserRepository {
         FirebaseUser firebaseUser = mAuth.getCurrentUser();
 
         if (firebaseUser != null) {
-            String email = firebaseUser.getEmail();
-            DatabaseReference userRef = mDatabase.child("users").child(firebaseUser.getUid());
+            mFirestore.collection("users").document(firebaseUser.getUid())
+                    .get()
+                    .addOnSuccessListener(snapshot -> {
+                        if (snapshot.exists()) {
+                            String birthDate = snapshot.getString("birthDate");
+                            String userName = snapshot.getString("userName");
+                            String gender = snapshot.getString("gender");
+                            String imageUrl = snapshot.getString("profileImageUrl");
+                            String caregiver = snapshot.getString("caregiver");
+                            String maritalStatus = snapshot.getString("maritalStatus");
 
-            userRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    if (snapshot.exists()) {
-                        String birthDate = snapshot.child("birthDate").getValue(String.class);
-                        String userName = snapshot.child("userName").getValue(String.class);
-                        String gender = snapshot.child("gender").getValue(String.class);
-                        String imageUrl = snapshot.child("profileImageUrl").getValue(String.class);
-                        String caregiver = snapshot.child("caregiver").getValue(String.class);
-                        String maritalStatus = snapshot.child("maritalStatus").getValue(String.class);
+                            // Retrieve medHistory as a List<inputMedHistory>
+                            List<inputMedHistory> medHistory = new ArrayList<>();
+                            List<Map<String, Object>> rawMedHistory =
+                                    (List<Map<String, Object>>) snapshot.get("medHistory");
+                            if (rawMedHistory != null) {
+                                for (Map<String, Object> item : rawMedHistory) {
+                                    inputMedHistory med = new inputMedHistory();
+                                    if (item.get("lamanya") != null) med.setLamanya(String.valueOf(item.get("lamanya")));
+                                    if (item.get("lamanyaBulan") != null) med.setLamanyaBulan(String.valueOf(item.get("lamanyaBulan")));
+                                    if (item.get("penyakit") != null) med.setPenyakit(String.valueOf(item.get("penyakit")));
+                                    medHistory.add(med);
+                                }
+                            }
 
-                        // Retrieve medHistory as a List<String>
-                        List<inputMedHistory> medHistory = new ArrayList<>();
-                        for (DataSnapshot medHistorySnapshot : snapshot.child("medHistory").getChildren()) {
-                            medHistory.add(medHistorySnapshot.getValue(inputMedHistory.class));
+                            // Convert string imageUrl to Uri
+                            Uri profileImageUri = (imageUrl != null) ? Uri.parse(imageUrl) : null;
+
+                            User userProfile = new User(firebaseUser.getEmail(), birthDate, userName, gender, profileImageUri, caregiver, maritalStatus, medHistory);
+                            userLiveData.setValue(userProfile);
+                        } else {
+                            userLiveData.setValue(null);
                         }
-                        // Convert string imageUrl to Uri
-                        Uri profileImageUri = (imageUrl != null) ? Uri.parse(imageUrl) : null;
-
-                        User userProfile = new User(email, birthDate, userName, gender, profileImageUri, caregiver, maritalStatus, medHistory);
-                        userLiveData.setValue(userProfile);
-                    }
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-                    Log.e("UserRepository", "Database error: ", error.toException());
-                    userLiveData.setValue(null); // Optionally set the value to null to indicate a failure
-                }
-            });
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("UserRepository", "Firestore error: ", e);
+                        userLiveData.setValue(null); // Optionally set the value to null to indicate a failure
+                    });
         }
 
         return userLiveData;
@@ -84,8 +86,9 @@ public class UserRepository {
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
                         if (user != null) {
-                            User additionalUserInfo = new User(email, birthDate, userName, gender,  null, caregiver, maritalStatus, medHistory);
-                            mDatabase.child("users").child(user.getUid()).setValue(additionalUserInfo);
+                            User additionalUserInfo = new User(email, birthDate, userName, gender, null, caregiver, maritalStatus, medHistory);
+                            mFirestore.collection("users").document(user.getUid())
+                                    .set(additionalUserInfo);
                             userLiveData.postValue(user);
                         }
                     } else {
@@ -108,8 +111,9 @@ public class UserRepository {
                     null
             );
 
-            // Save the user data to your database
-            mDatabase.child("users").child(user.getUid()).setValue(additionalUserInfo)
+            // Save the user data to Firestore
+            mFirestore.collection("users").document(user.getUid())
+                    .set(additionalUserInfo)
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
                             userLiveData.postValue(user);
@@ -122,8 +126,6 @@ public class UserRepository {
         }
     }
 
-
-
     public void login(String email, String password, MutableLiveData<FirebaseUser> userLiveData, MutableLiveData<String> errorLiveData) {
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
@@ -131,9 +133,7 @@ public class UserRepository {
                         FirebaseUser user = mAuth.getCurrentUser();
                         userLiveData.postValue(user);
                     } else {
-//                        errorLiveData.postValue(task.getException().getMessage());
                         errorLiveData.postValue(getFirebaseAuthErrorMessage(task.getException()));
-
                     }
                 });
     }
@@ -148,7 +148,6 @@ public class UserRepository {
         }
     }
 
-
     public void signOut() {
         mAuth.signOut();
     }
@@ -157,18 +156,14 @@ public class UserRepository {
         FirebaseUser firebaseUser = mAuth.getCurrentUser();
 
         if (firebaseUser != null) {
-            DatabaseReference userRef = mDatabase.child("users").child(firebaseUser.getUid());
             Map<String, Object> updates = new HashMap<>();
-//            updates.put("userName", newUserName);
-//            // Optionally update other fields like email and birthDate
-//             updates.put("email", email);
-//             updates.put("birthDate", birthDate);
             if (newUserName != null) updates.put("userName", newUserName);
             if (email != null) updates.put("email", email);
             if (birthDate != null) updates.put("birthDate", birthDate);
 
-            // Update profile in Realtime Database
-            userRef.updateChildren(updates)
+            // Update profile in Firestore
+            mFirestore.collection("users").document(firebaseUser.getUid())
+                    .update(updates)
                     .addOnSuccessListener(aVoid -> {
                         // Upload profile image if URI provided
                         if (profileImageUri != null) {
@@ -183,7 +178,8 @@ public class UserRepository {
                     });
         }
     }
-     // Method to upload profile image to Firebase Storage
+
+    // Method to upload profile image to Firebase Storage (tidak berubah)
     private void uploadProfileImage(Uri imageUri, String userId, MutableLiveData<String> imageUrlLiveData) {
         StorageReference profileImageRef = mStorage.child(userId + ".jpg"); // Adjust filename as needed
 
@@ -192,8 +188,9 @@ public class UserRepository {
                     profileImageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                         String imageUrl = uri.toString();
 
-                        // Update profile image URL in Realtime Database
-                        mDatabase.child("users").child(userId).child("profileImageUrl").setValue(imageUrl)
+                        // Update profile image URL in Firestore
+                        mFirestore.collection("users").document(userId)
+                                .update("profileImageUrl", imageUrl)
                                 .addOnSuccessListener(aVoid -> imageUrlLiveData.postValue(imageUrl))
                                 .addOnFailureListener(e -> Log.e("UserRepository", "Failed to update profile image URL: " + e.getMessage()));
                     });
@@ -208,9 +205,8 @@ public class UserRepository {
         FirebaseUser firebaseUser = mAuth.getCurrentUser();
 
         if (firebaseUser != null) {
-            DatabaseReference userRef = mDatabase.child("users").child(firebaseUser.getUid()).child("medHistory");
-
-            userRef.setValue(newMedHistory)
+            mFirestore.collection("users").document(firebaseUser.getUid())
+                    .update("medHistory", newMedHistory)
                     .addOnSuccessListener(aVoid -> updateResultLiveData.postValue("Medical history updated successfully"))
                     .addOnFailureListener(e -> updateResultLiveData.postValue("Failed to update medical history: " + e.getMessage()));
         } else {
@@ -222,12 +218,12 @@ public class UserRepository {
         FirebaseUser firebaseUser = mAuth.getCurrentUser();
 
         if (firebaseUser != null) {
-            DatabaseReference userRef = mDatabase.child("users").child(firebaseUser.getUid());
             Map<String, Object> updates = new HashMap<>();
             updates.put("caregiver", caregiver);
             updates.put("maritalStatus", maritalStatus);
 
-            userRef.updateChildren(updates)
+            mFirestore.collection("users").document(firebaseUser.getUid())
+                    .update(updates)
                     .addOnSuccessListener(aVoid -> updateResultLiveData.postValue("Medical data updated successfully"))
                     .addOnFailureListener(e -> updateResultLiveData.postValue("Failed to update medical data: " + e.getMessage()));
         } else {
@@ -236,5 +232,3 @@ public class UserRepository {
     }
 
 }
-
-
