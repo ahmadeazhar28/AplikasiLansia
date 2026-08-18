@@ -37,7 +37,7 @@ public class NewsRepository {
                             String date = document.getString("date");
                             String category = document.getString("category");
                             String source = document.getString("source");
-                            String image = document.getString("image"); // nama field tetap "image", TIDAK di-rename
+                            String image = document.getString("image");
                             String newsContent = document.getString("newsContent");
 
                             Uri newsImageUri = (image != null) ? Uri.parse(image) : null;
@@ -51,6 +51,8 @@ public class NewsRepository {
                         Log.e("NewsRepository", "Firestore error", e);
                         newsLiveData.setValue(null);
                     });
+        } else {
+            newsLiveData.setValue(new ArrayList<>());
         }
         return newsLiveData;
     }

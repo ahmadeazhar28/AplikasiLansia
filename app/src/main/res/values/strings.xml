@@ -233,5 +233,15 @@
 <!--    <resources>-->
         <string name="server_client_id" translatable="false">256979860495-s2pdt23dusmndfv8rkoleu5jeinjeqrd.apps.googleusercontent.com</string>
 <!--    </resources>-->
+    <!--
+    TAMBAHKAN STRING INI DI DALAM <resources> YANG SUDAH ADA DI strings.xml.
+    Bisa ditaruh dekat string "keluar" dan "confirm_logout" yang sudah ada,
+    biar mudah ditemukan nanti.
+-->
+
+    <string name="hapus_akun">Hapus Akun</string>
+    <string name="hapus_akun_konfirmasi_judul">Hapus Akun?</string>
+    <string name="hapus_akun_konfirmasi_pesan">Semua data Anda (profil, riwayat kesehatan, quiz, pengingat) akan dihapus secara permanen dan tidak bisa dikembalikan. Yakin ingin melanjutkan?</string>
+    <string name="ya_hapus_akun">Ya, Hapus Akun Saya</string>
 
 </resources>
