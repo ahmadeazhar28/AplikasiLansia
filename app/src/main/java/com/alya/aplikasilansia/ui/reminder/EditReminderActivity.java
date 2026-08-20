@@ -17,6 +17,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.alya.aplikasilansia.R;
+import com.alya.aplikasilansia.data.Reminder;
+import com.alya.aplikasilansia.messaging.ReminderScheduler;
 import com.alya.aplikasilansia.ui.newreminder.IconReminderFragment;
 import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
@@ -31,10 +33,11 @@ public class EditReminderActivity extends AppCompatActivity implements IconRemin
     private EditText titleEt, descEt;
     private ImageView iconImg;
     private Spinner daySpinner;
-    private String reminderId, daySelected;
+    private Spinner repeatSpinner;
+    private String reminderId, daySelected, repeatSelected;
     private int selectedIcon;
     ReminderViewModel reminderViewModel;
-    
+
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +49,7 @@ public class EditReminderActivity extends AppCompatActivity implements IconRemin
         iconImg = findViewById(R.id.img_ic_reminder_edit);
         titleEt = findViewById(R.id.et_remind_title);
         daySpinner = findViewById(R.id.edit_day_reminder);
+        repeatSpinner = findViewById(R.id.spinner_repeat_reminder_edit);
         timePickerTv = findViewById(R.id.tv_hour_reminder_edit);
         descEt = findViewById(R.id.et_desc_reminder);
         editIconBtn = findViewById(R.id.btn_ic_remind_edit);
@@ -71,14 +75,10 @@ public class EditReminderActivity extends AppCompatActivity implements IconRemin
 
         saveBtn.setOnClickListener(v -> {
             saveEditedData();
-            Intent intent = new Intent(EditReminderActivity.this, ReminderActivity.class);
-            startActivity(intent);
-            finish();
         });
 
         reminderViewModel.errorLiveData.observe(this, errorMessage -> {
             if (errorMessage != null) {
-                // Show error message (e.g., using a Toast)
                 Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
             }
         });
@@ -94,6 +94,32 @@ public class EditReminderActivity extends AppCompatActivity implements IconRemin
         descEt.setText(intent.getStringExtra("REMINDER_DESC"));
         selectedIcon = intent.getIntExtra("REMINDER_ICON", 1);
         iconImg.setImageResource(selectedIcon);
+
+        String repeatCode = intent.getStringExtra("REMINDER_REPEAT_TYPE");
+        setRepeatSpinner(repeatCode);
+    }
+
+    private void setRepeatSpinner(String repeatCode) {
+        CustomSpinnerAdapter repeatAdapter = new CustomSpinnerAdapter(
+                this, android.R.layout.simple_spinner_item, getResources().getStringArray(R.array.repeat_array)
+        );
+        repeatAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        repeatSpinner.setAdapter(repeatAdapter);
+
+        int position = 0; // default "Sekali saja"
+        if (Reminder.REPEAT_HARIAN.equals(repeatCode)) {
+            position = 1;
+        } else if (Reminder.REPEAT_MINGGUAN.equals(repeatCode)) {
+            position = 2;
+        }
+        repeatSpinner.setSelection(position);
+    }
+
+    private String mapRepeatLabelToCode(String label) {
+        if (label == null) return Reminder.REPEAT_SEKALI;
+        if (label.equals("Setiap Hari")) return Reminder.REPEAT_HARIAN;
+        if (label.equals("Setiap Minggu")) return Reminder.REPEAT_MINGGUAN;
+        return Reminder.REPEAT_SEKALI;
     }
 
     private void saveEditedData() {
@@ -102,15 +128,18 @@ public class EditReminderActivity extends AppCompatActivity implements IconRemin
         String newTime = timePickerTv.getText().toString().trim();
         String desc = descEt.getText().toString().trim();
         String timestamp = calculateTimestamp(newDay, newTime);
+        String repeatType = mapRepeatLabelToCode(repeatSpinner.getSelectedItem().toString());
 
         if (reminderId != null){
-            reminderViewModel.editReminder(reminderId, newTitle, newDay, newTime, desc, timestamp, selectedIcon, () -> {
-                // This code runs after the reminder is successfully edited
-//                Toast.makeText(this, "Reminder updated successfully!", Toast.LENGTH_SHORT).show();
-                // Optionally, navigate back or refresh UI
+            // Batalkan alarm LAMA dulu sebelum menjadwalkan yang baru.
+            ReminderScheduler.cancelReminder(this, reminderId);
+
+            reminderViewModel.editReminder(reminderId, newTitle, newDay, newTime, desc, timestamp, selectedIcon, repeatType, () -> {
+                ReminderScheduler.scheduleReminder(EditReminderActivity.this, reminderId, newTitle, desc, timestamp, selectedIcon, repeatType);
                 dataSavedDialog();
-                finish(); // Close the activity if you are in an edit activity
-                // Or refresh the list in your RecyclerView, etc.
+                Intent intent = new Intent(EditReminderActivity.this, ReminderActivity.class);
+                startActivity(intent);
+                finish();
             });
 
         }
@@ -141,17 +170,15 @@ public class EditReminderActivity extends AppCompatActivity implements IconRemin
             public void onClick(View v) {
                 IconReminderFragment iconReminderFragment = new IconReminderFragment();
                 iconReminderFragment.show(getSupportFragmentManager(), "IconReminderDialog");
-//                Toast.makeText(this, "Button Clicked!", Toast.LENGTH_SHORT).show();
-                iconReminderFragment.setOnIconSelectedListener(EditReminderActivity.this); // Set listener
+                iconReminderFragment.setOnIconSelectedListener(EditReminderActivity.this);
             }
         });
     }
 
     @Override
     public void onIconSelected(int iconResId) {
-        // Update ImageView with selected icon
         iconImg.setImageResource(iconResId);
-        selectedIcon = iconResId; // Save selected icon resource ID to use later
+        selectedIcon = iconResId;
     }
 
     private void setDaySpinner(String selectedDay) {
@@ -198,10 +225,8 @@ public class EditReminderActivity extends AppCompatActivity implements IconRemin
     private String calculateTimestamp(String selectedDay, String selectedTime) {
         Calendar now = Calendar.getInstance();
 
-        // Parse selected time
         String[] timeParts = selectedTime.split(":");
         if (timeParts.length != 2) {
-            // Handle invalid time format
             return "";
         }
 
@@ -212,20 +237,16 @@ public class EditReminderActivity extends AppCompatActivity implements IconRemin
             hour = Integer.parseInt(timeParts[0]);
             minute = Integer.parseInt(timeParts[1]);
         } catch (NumberFormatException e) {
-            // Handle parsing error
             return "";
         }
 
-        // Calculate the day difference
         int dayOfWeekNow = now.get(Calendar.DAY_OF_WEEK);
         int targetDayOfWeek = getDayOfWeek(selectedDay);
         if (targetDayOfWeek == -1) {
-            // Handle invalid day
             return "";
         }
         int dayDifference = (targetDayOfWeek - dayOfWeekNow + 7) % 7;
 
-        // Set the target date and time
         Calendar targetDate = (Calendar) now.clone();
         targetDate.add(Calendar.DAY_OF_MONTH, dayDifference);
         targetDate.set(Calendar.HOUR_OF_DAY, hour);
@@ -233,7 +254,6 @@ public class EditReminderActivity extends AppCompatActivity implements IconRemin
         targetDate.set(Calendar.SECOND, 0);
         targetDate.set(Calendar.MILLISECOND, 0);
 
-        // Return the timestamp
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
         return sdf.format(targetDate.getTime());
     }
@@ -255,7 +275,7 @@ public class EditReminderActivity extends AppCompatActivity implements IconRemin
             case "Minggu":
                 return Calendar.SUNDAY;
             default:
-                return -1; // Handle invalid input or edge cases
+                return -1;
         }
     }
 }

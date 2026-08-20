@@ -52,14 +52,6 @@ public class FilteredReminderAdapter extends RecyclerView.Adapter<RecyclerView.V
         return -1;
     }
 
-//    @Override
-//    public int getItemViewType(int position) {
-//        if (items.get(position) instanceof String) {
-//            return VIEW_TYPE_HEADER;
-//        } else {
-//            return VIEW_TYPE_REMINDER;
-//        }
-//    }
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -98,6 +90,10 @@ public class FilteredReminderAdapter extends RecyclerView.Adapter<RecyclerView.V
                 intent.putExtra("REMINDER_DESC", reminder.getDesc());
                 intent.putExtra("REMINDER_TIMESTAMP", reminder.getTimestamp());
                 intent.putExtra("REMINDER_ICON", reminder.getIcon());
+                // BARU: kirim juga repeatType, supaya Spinner "Ulangi" di
+                // halaman Edit terisi sesuai data aslinya (Sekali/Harian/Mingguan),
+                // bukan selalu balik ke default "Sekali saja".
+                intent.putExtra("REMINDER_REPEAT_TYPE", reminder.getRepeatType());
                 activity.startActivity(intent);
                 activity.finish();
             });

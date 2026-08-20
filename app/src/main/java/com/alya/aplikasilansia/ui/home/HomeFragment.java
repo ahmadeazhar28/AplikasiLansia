@@ -94,8 +94,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
             dfBp.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    // Handle click event for dfBp
-                    // For example, start LoginActivity
                     Intent intent = new Intent(getActivity(), LoginActivity.class);
                     startActivity(intent);
                 }
@@ -104,8 +102,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
             dfHc.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    // Handle click event for dfHc
-                    // For example, start LoginActivity
                     Intent intent = new Intent(getActivity(), LoginActivity.class);
                     startActivity(intent);
                 }
@@ -114,19 +110,15 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
             dfRem.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    // Handle click event for dfRem
-                    // For example, start LoginActivity
                     Intent intent = new Intent(getActivity(), LoginActivity.class);
                     startActivity(intent);
                 }
             });
 
         } else {
-            // Inflate the layout for this fragment
             toHealthCare = view.findViewById(R.id.btn_to_healthcare);
             toHealthCare.setOnClickListener(this);
 
-            // Initialize TextViews
             toReminder = view.findViewById(R.id.btn_to_reminder);
             toReminder.setOnClickListener(this);
 
@@ -143,7 +135,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                                     .load(user.getProfileImageUrl())
                                     .into(profileImage);
                         } else {
-                            // Handle no profile image case
                             profileImage.setImageResource(R.drawable.img);
                         }
                     }
@@ -155,20 +146,17 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                     if (view.getId() == R.id.profile_image_home) {
                         Fragment profileFragment = new ProfileFragment();
                         FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
-                        transaction.replace(R.id.nav_host_fragment_activity_main, profileFragment); // Make sure R.id.fragment_container is the ID of your fragment container
-                        transaction.addToBackStack(null); // Optional: add to back stack
+                        transaction.replace(R.id.nav_host_fragment_activity_main, profileFragment);
+                        transaction.addToBackStack(null);
                         transaction.commit();
                     }
                 }
             });
-            // Observe the latest blood pressure data
             bloodPresViewModel.getLatestBloodPressureData().observe(getViewLifecycleOwner(), latestBloodPressure -> {
                 if (latestBloodPressure != null) {
-                    // Update the TextViews with the latest data
                     tvPressure.setText(latestBloodPressure.getBloodPressure());
                     tvPulse.setText(latestBloodPressure.getPulse());
                 } else {
-                    // Handle case where there is no data
                     tvPressure.setText("-");
                     tvPulse.setText("-");
                 }
@@ -183,6 +171,23 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         updateFirstTodayReminderUI();
         reminderViewModel.fetchReminders();
     }
+
+    /**
+     * PENTING - FIX BUG: sebelumnya teks default "Buat Pengingatmu!" cuma
+     * di-set lewat observer getReminderLiveData() saat reminders.size()==0.
+     * Sejak ReminderRepository berhenti menghapus reminder yang sudah lewat
+     * (demi fitur Riwayat), reminders.size() hampir tidak pernah 0 lagi kalau
+     * user sudah pernah bikin reminder - walau tidak ada satupun yang akan
+     * datang. Akibatnya teks default itu tidak pernah ke-trigger lagi dan
+     * layar menampilkan teks placeholder lama dari XML yang tidak pernah
+     * di-update.
+     *
+     * Fix: satu-satunya sumber kebenaran sekarang adalah firstReminder null
+     * atau tidak (firstReminderLiveData sudah benar menghitung "reminder
+     * akan datang berikutnya", terlepas dari riwayat). Observer kedua yang
+     * lama (getReminderLiveData dengan reminders.size()==0) dihapus supaya
+     * tidak saling menimpa/berebut state dengan observer ini.
+     */
     private void updateFirstTodayReminderUI() {
         reminderViewModel.getFirstReminderLiveData().observe(getViewLifecycleOwner(), firstReminder -> {
             if (firstReminder != null) {
@@ -191,10 +196,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                 tvTimeRemind.setText(formatDate(firstReminder.getTimestamp()));
                 imgRemind.setImageResource(firstReminder.getIcon());
             } else {
-            }
-        });
-        reminderViewModel.getReminderLiveData().observe(getViewLifecycleOwner(), reminders -> {
-            if (reminders.size() == 0) {
                 String textName = "Buat Pengingatmu!";
                 String textDate = "Belum ada pengingat terjadwal.";
                 tvTitleRemind.setText(textName);
@@ -203,7 +204,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                 Log.d(TAG, "No first today reminder to update UI with");
             }
         });
-
     }
     private String formatDate(String timestamp) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());

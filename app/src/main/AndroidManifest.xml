@@ -7,6 +7,11 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- WAJIB untuk Android 13+ (API 33) supaya notifikasi bisa muncul sama sekali -
+         tanpa ini, semua notifikasi (termasuk reminder) akan silent-fail di Android 13 ke atas -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Supaya alarm tetap presisi walau HP masuk Doze/battery optimization -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"
@@ -31,6 +36,9 @@
             android:exported="false" />
         <activity
             android:name=".ui.reminder.EditReminderActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.reminder.ReminderDetailActivity"
             android:exported="false" />
         <activity
             android:name=".ForgotPassActivity"
@@ -89,6 +97,11 @@
             </intent-filter>
         </service>
 
+        <!-- PENTING: intent-filter BOOT_COMPLETED tetap perlu dideklarasikan
+             di sini supaya sistem tau untuk mengaktifkan receiver ini saat
+             boot. Trigger reminder individual (ACTION_REMINDER) tidak perlu
+             intent-filter karena PendingIntent memanggilnya lewat explicit
+             component (langsung .class), bukan lewat implicit intent. -->
         <receiver
             android:name=".messaging.ReminderReceiver"
             android:enabled="true"

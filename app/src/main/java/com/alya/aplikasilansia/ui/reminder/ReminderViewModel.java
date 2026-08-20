@@ -43,13 +43,6 @@ public class ReminderViewModel extends ViewModel {
     public LiveData<String> getUpdateResultLiveData(){
         return updateResultLiveData;
     }
-//    private void fetchReminder(){
-//        reminderLiveData = reminderRepository.fetchReminder();
-//    }
-//    private void fetchReminders(){
-//        reminderLiveData = reminderRepository.fetchReminder();
-////        reminderLiveData.setValue(reminders);
-//    }
 
     public void fetchReminders() {
         reminderRepository.fetchReminder().observeForever(reminders -> {
@@ -87,12 +80,12 @@ public class ReminderViewModel extends ViewModel {
                 if (isSameDay(today, reminderCalendar)) {
                     if (reminderCalendar.after(today)) {
                         if (firstTodayReminder == null || reminderDate.before(sdf.parse(firstTodayReminder.getTimestamp()))) {
-                            firstTodayReminder = reminder; // Update the first reminder for today if it is still upcoming
+                            firstTodayReminder = reminder;
                         }
                     }
                 } else if (reminderCalendar.after(today)) {
                     if (firstUpcomingReminder == null || reminderDate.before(sdf.parse(firstUpcomingReminder.getTimestamp()))) {
-                        firstUpcomingReminder = reminder; // Update the first upcoming reminder if found earlier
+                        firstUpcomingReminder = reminder;
                     }
                 }
             } catch (ParseException e) {
@@ -107,23 +100,20 @@ public class ReminderViewModel extends ViewModel {
                 cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR);
     }
 
-    public void editReminder(String reminderId, String title, String day, String time, String desc, String timestamp, Integer icon, Runnable onSuccess) {
-        reminderRepository.editReminder(reminderId, title, day, time, desc, timestamp, icon, errorLiveData, () -> {
-            // Update the UI or perform additional actions upon success
-            fetchReminders(); // Reload the reminders after editing
+    public void editReminder(String reminderId, String title, String day, String time, String desc, String timestamp, Integer icon, String repeatType, Runnable onSuccess) {
+        reminderRepository.editReminder(reminderId, title, day, time, desc, timestamp, icon, repeatType, errorLiveData, () -> {
+            fetchReminders();
             if (onSuccess != null) {
-                onSuccess.run(); // Execute the onSuccess Runnable
+                onSuccess.run();
             }
         });
     }
-//    public void deleteReminderData(String reminderId) {
-//        reminderRepository.deleteReminder(reminderId, errorLiveData);
-//    }
+
     public void deleteReminderData(String reminderId) {
         reminderRepository.deleteReminder(reminderId, errorLiveData, new ReminderRepository.OnReminderDeletedCallback() {
             @Override
             public void onReminderDeleted() {
-                fetchReminders(); // Reload data after deletion
+                fetchReminders();
             }
         });
     }

@@ -19,7 +19,8 @@ public class AddReminderViewModel extends ViewModel {
         updateResultLiveData = new MutableLiveData<>();
     }
 
-    public void createReminder (String title, String day, String time, String desc, String timestamp, Integer icon){
-        reminderRepository.createReminder(title, day, time, desc, timestamp, icon, reminderLiveData, errorLiveData);
+    public void createReminder(String title, String day, String time, String desc, String timestamp, Integer icon, String repeatType,
+                                ReminderRepository.OnReminderCreatedListener listener) {
+        reminderRepository.createReminder(title, day, time, desc, timestamp, icon, repeatType, reminderLiveData, errorLiveData, listener);
     }
 }

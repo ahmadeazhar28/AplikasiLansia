@@ -193,6 +193,7 @@
         <item>Hari Ini</item>
         <item>Besok</item>
         <item>Yang Akan Datang</item>
+        <item>Riwayat</item>
     </string-array>
 
     <string-array name="day_array">

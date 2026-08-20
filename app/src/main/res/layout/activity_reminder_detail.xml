@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/layout_bottom_gray"
+    android:orientation="vertical"
+    tools:context=".ui.reminder.ReminderDetailActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Waktunya!"
+        android:fontFamily="@font/inter_bold"
+        android:textSize="26sp"
+        android:textAlignment="center"
+        android:textColor="@color/black"
+        android:layout_marginTop="40dp"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Ini pengingat yang perlu Anda lakukan sekarang"
+        android:fontFamily="@font/inter_medium"
+        android:textSize="16sp"
+        android:textAlignment="center"
+        android:textColor="#767676"
+        android:layout_marginBottom="24dp"/>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardElevation="10dp"
+        app:cardCornerRadius="24dp"
+        android:layout_margin="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:padding="28dp">
+
+            <ImageView
+                android:id="@+id/img_detail_reminder"
+                android:layout_width="90dp"
+                android:layout_height="90dp"
+                android:src="@drawable/ic_remind_pumpkin"
+                tools:ignore="ContentDescription" />
+
+            <TextView
+                android:id="@+id/tv_detail_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:fontFamily="@font/inter_bold"
+                android:textSize="24sp"
+                android:textAlignment="center"
+                android:textColor="@color/black"
+                tools:text="Minum Obat Darah Tinggi" />
+
+            <TextView
+                android:id="@+id/tv_detail_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="@font/inter_medium"
+                android:textSize="18sp"
+                android:textAlignment="center"
+                android:textColor="@color/blue2"
+                tools:text="Hari ini pukul 08:00" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E0E0E0"
+                android:layout_marginVertical="18dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Catatan"
+                android:fontFamily="@font/inter_bold"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:layout_marginBottom="6dp"/>
+
+            <TextView
+                android:id="@+id/tv_detail_desc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/inter_regular"
+                android:textSize="16sp"
+                android:lineSpacingExtra="4dp"
+                android:textColor="@color/black"
+                tools:text="Minum 1 tablet setelah sarapan pagi." />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_selesai_reminder"
+        style="@style/CustomBlueRoundButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:text="Sudah Selesai"
+        android:textSize="18sp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_lihat_semua_reminder"
+        style="@style/BlueRoundButtonNoOutline"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="24dp"
+        android:text="Lihat Semua Pengingat"
+        android:textSize="16sp" />
+
+</LinearLayout>

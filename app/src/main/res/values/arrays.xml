@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="repeat_array">
+        <item>Sekali saja</item>
+        <item>Setiap Hari</item>
+        <item>Setiap Minggu</item>
+    </string-array>
+</resources>

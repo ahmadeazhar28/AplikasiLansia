@@ -22,6 +22,8 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.alya.aplikasilansia.R;
+import com.alya.aplikasilansia.data.Reminder;
+import com.alya.aplikasilansia.data.ReminderRepository;
 import com.alya.aplikasilansia.messaging.ReminderScheduler;
 import com.alya.aplikasilansia.ui.reminder.CustomSpinnerAdapter;
 import com.alya.aplikasilansia.ui.reminder.ReminderActivity;
@@ -42,6 +44,7 @@ public class AddReminderActivity extends AppCompatActivity implements View.OnCli
     private EditText inputTitleReminder;
     private EditText inputDescReminder;
     private Spinner dayReminder;
+    private Spinner repeatReminder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +64,7 @@ public class AddReminderActivity extends AppCompatActivity implements View.OnCli
         inputTitleReminder = findViewById(R.id.input_judul_reminder);
         inputDescReminder = findViewById(R.id.input_desc_reminder);
         dayReminder = findViewById(R.id.spinner_day_reminder);
+        repeatReminder = findViewById(R.id.spinner_repeat_reminder);
 
         dialogIconReminder(btnIconReminder);
         setTimePicker(tvHourReminder);
@@ -76,6 +80,12 @@ public class AddReminderActivity extends AppCompatActivity implements View.OnCli
         );
         dayReminderAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         dayReminder.setAdapter(dayReminderAdapter);
+
+        CustomSpinnerAdapter repeatReminderAdapter = new CustomSpinnerAdapter(
+                this, android.R.layout.simple_spinner_item, getResources().getStringArray(R.array.repeat_array)
+        );
+        repeatReminderAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        repeatReminder.setAdapter(repeatReminderAdapter);
 
         addReminderViewModel.reminderLiveData.observe(this, new Observer<FirebaseUser>() {
             @Override
@@ -117,13 +127,24 @@ public class AddReminderActivity extends AppCompatActivity implements View.OnCli
         String selectedDay = dayReminder.getSelectedItem().toString();
         String selectedTime = tvHourReminder.getText().toString().trim();
         String desc = inputDescReminder.getText().toString().trim();
+        String repeatType = mapRepeatLabelToCode(repeatReminder.getSelectedItem().toString());
 
         if (selectedIconResourceId != 0 && !title.isEmpty() && !selectedDay.isEmpty() && !selectedTime.isEmpty() && !desc.isEmpty()) {
             String timestamp = calculateTimestamp(selectedDay, selectedTime);
-            addReminderViewModel.createReminder(title, selectedDay, selectedTime, desc, timestamp, selectedIconResourceId);
-            Log.d("AddReminderActivity", "Attempting to schedule reminder");
-            ReminderScheduler.scheduleReminder(this, title, desc, timestamp);
-            Log.d("AddReminderActivity", "scheduleReminder should have been called");
+            addReminderViewModel.createReminder(title, selectedDay, selectedTime, desc, timestamp, selectedIconResourceId, repeatType,
+                    new ReminderRepository.OnReminderCreatedListener() {
+                        @Override
+                        public void onSuccess(String reminderId) {
+                            Log.d("AddReminderActivity", "Attempting to schedule reminder id=" + reminderId);
+                            ReminderScheduler.scheduleReminder(AddReminderActivity.this, reminderId, title, desc, timestamp, selectedIconResourceId, repeatType);
+                            Log.d("AddReminderActivity", "scheduleReminder should have been called");
+                        }
+
+                        @Override
+                        public void onFailure(String error) {
+                            Log.e("AddReminderActivity", "Gagal simpan reminder, alarm tidak dijadwalkan: " + error);
+                        }
+                    });
 
         } else {
             incompleteFormDialog();
@@ -131,6 +152,17 @@ public class AddReminderActivity extends AppCompatActivity implements View.OnCli
 
         }
 
+    }
+
+    /**
+     * Ubah label yang tampil di Spinner ("Sekali saja"/"Setiap Hari"/"Setiap Minggu")
+     * jadi kode internal yang disimpan di Firestore & dipakai logic scheduling.
+     */
+    private String mapRepeatLabelToCode(String label) {
+        if (label == null) return Reminder.REPEAT_SEKALI;
+        if (label.equals("Setiap Hari")) return Reminder.REPEAT_HARIAN;
+        if (label.equals("Setiap Minggu")) return Reminder.REPEAT_MINGGUAN;
+        return Reminder.REPEAT_SEKALI;
     }
 
     private void dataSavedDialog() {
