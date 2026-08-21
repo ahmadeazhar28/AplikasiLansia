@@ -278,6 +278,19 @@
                 </androidx.cardview.widget.CardView>
             </androidx.constraintlayout.widget.ConstraintLayout>
 
+            <TextView
+                android:id="@+id/tv_tensi_last_checked"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="-8dp"
+                android:layout_marginBottom="4dp"
+                android:gravity="center_horizontal"
+                android:text=""
+                android:textSize="12sp"
+                android:textColor="@android:color/darker_gray"
+                android:visibility="gone" />
+
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

@@ -88,6 +88,14 @@
     <string name="cari_pelayanan">Cari Pelayanan Kesehatan di Sekitar Anda</string>
     <string name="profilepersonal">Data Pribadi</string>
     <string name="riwayatPenyakit">Riwayat Penyakit</string>
+    <string name="riwayat_pemeriksaan">Riwayat Pemeriksaan</string>
+    <string name="tes_skrining">Tes Skrining Depresi</string>
+    <string name="tekanan_darah">Tekanan Darah</string>
+    <string name="lihat_semua">Lihat Semua</string>
+    <string name="belum_ada_data_skrining">Kamu belum pernah mengikuti tes skrining.</string>
+    <string name="belum_ada_data_tensi">Kamu belum pernah mencatat tekanan darah.</string>
+    <string name="mulai_tes">Mulai Tes</string>
+    <string name="catat_tensi">Catat Tensi</string>
     <string name="lamaPenyakit">Lama Menderita Penyakit</string>
     <string name="care_giver">Yang Merawat Saat Sakit</string>
     <string name="status_kawin">Status Perkawinan</string>
@@ -231,9 +239,9 @@
         <item>Cerai Mati</item>
     </string-array>
 
-<!--    <resources>-->
-        <string name="server_client_id" translatable="false">256979860495-s2pdt23dusmndfv8rkoleu5jeinjeqrd.apps.googleusercontent.com</string>
-<!--    </resources>-->
+    <!--    <resources>-->
+    <string name="server_client_id" translatable="false">256979860495-s2pdt23dusmndfv8rkoleu5jeinjeqrd.apps.googleusercontent.com</string>
+    <!--    </resources>-->
     <!--
     TAMBAHKAN STRING INI DI DALAM <resources> YANG SUDAH ADA DI strings.xml.
     Bisa ditaruh dekat string "keluar" dan "confirm_logout" yang sudah ada,

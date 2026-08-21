@@ -48,6 +48,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
     private Button dfBp, dfHc, dfRem;
     private TextView tvTitleRemind, tvTimeRemind;
     private TextView tvPressure, tvPulse;
+    private TextView tvTensiLastChecked;
     private ImageView imgRemind;
 
     public HomeFragment() {
@@ -80,6 +81,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
 
         tvPressure = view.findViewById(R.id.tv_pressure);
         tvPulse = view.findViewById(R.id.tv_pulse);
+        tvTensiLastChecked = view.findViewById(R.id.tv_tensi_last_checked);
 
         if (mAuth.getCurrentUser() == null) {
             userNameHome.setText("Pengguna Baru");
@@ -154,11 +156,17 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
             });
             bloodPresViewModel.getLatestBloodPressureData().observe(getViewLifecycleOwner(), latestBloodPressure -> {
                 if (latestBloodPressure != null) {
+                    // Data tensi terakhir TETAP ditampilkan sampai user mencatat pengukuran
+                    // baru (bukan reset ke "-"), plus label "Terakhir dicek" biar jelas
+                    // ini bukan data hari ini kalau memang sudah lama.
                     tvPressure.setText(latestBloodPressure.getBloodPressure());
                     tvPulse.setText(latestBloodPressure.getPulse());
+                    tvTensiLastChecked.setText("Terakhir dicek: " + latestBloodPressure.getBpDate());
+                    tvTensiLastChecked.setVisibility(View.VISIBLE);
                 } else {
                     tvPressure.setText("-");
                     tvPulse.setText("-");
+                    tvTensiLastChecked.setVisibility(View.GONE);
                 }
             });
         }

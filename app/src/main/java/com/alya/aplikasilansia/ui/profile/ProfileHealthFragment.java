@@ -18,8 +18,17 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.alya.aplikasilansia.LoginActivity;
 import com.alya.aplikasilansia.R;
+import com.alya.aplikasilansia.data.BloodPressure;
+import com.alya.aplikasilansia.data.QuizHistoryItem;
 import com.alya.aplikasilansia.data.User;
 import com.alya.aplikasilansia.data.inputMedHistory;
+import com.alya.aplikasilansia.ui.bloodpressure.BloodPresViewModel;
+import com.alya.aplikasilansia.ui.bloodpressure.BloodPressureActivity;
+import com.alya.aplikasilansia.ui.check.CheckFragment;
+import com.alya.aplikasilansia.ui.quiz.QuizInstructionActivity;
+import com.alya.aplikasilansia.ui.quiz.QuizViewModel;
+import com.google.android.material.button.MaterialButton;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.List;
 import java.util.Objects;
@@ -29,7 +38,20 @@ public class ProfileHealthFragment extends Fragment {
     private LinearLayout profileMedHistory;
     private TextView tvCaregiver, tvMaritalStatus;
     private ProfileViewModel profileViewModel;
+    private QuizViewModel quizViewModel;
+    private BloodPresViewModel bloodPresViewModel;
     private Button signOut;
+    private String userId;
+
+    // Kartu ringkasan tes skrining
+    private LinearLayout layoutSkriningFilled, layoutSkriningEmpty;
+    private TextView tvSkriningKlasifikasi, tvSkriningScore, tvSkriningDate;
+    private MaterialButton btnLihatSemuaSkrining, btnMulaiTesSkrining;
+
+    // Kartu ringkasan tekanan darah
+    private LinearLayout layoutTensiFilled, layoutTensiEmpty;
+    private TextView tvTensiPressure, tvTensiPulse, tvTensiDate;
+    private MaterialButton btnLihatSemuaTensi, btnCatatTensi;
 
     public ProfileHealthFragment() {
         // Required empty public constructor
@@ -39,6 +61,13 @@ public class ProfileHealthFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         profileViewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
+        quizViewModel = new ViewModelProvider(this).get(QuizViewModel.class);
+        bloodPresViewModel = new ViewModelProvider(this).get(BloodPresViewModel.class);
+
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        if (mAuth.getCurrentUser() != null) {
+            userId = mAuth.getCurrentUser().getUid();
+        }
     }
 
     @Override
@@ -51,13 +80,84 @@ public class ProfileHealthFragment extends Fragment {
         tvMaritalStatus = view.findViewById(R.id.tv_marital_stat);
         signOut = view.findViewById(R.id.btn_sign_out_2);
 
+        layoutSkriningFilled = view.findViewById(R.id.layout_skrining_filled);
+        layoutSkriningEmpty = view.findViewById(R.id.layout_skrining_empty);
+        tvSkriningKlasifikasi = view.findViewById(R.id.tv_skrining_klasifikasi);
+        tvSkriningScore = view.findViewById(R.id.tv_skrining_score);
+        tvSkriningDate = view.findViewById(R.id.tv_skrining_date);
+        btnLihatSemuaSkrining = view.findViewById(R.id.btn_lihat_semua_skrining);
+        btnMulaiTesSkrining = view.findViewById(R.id.btn_mulai_tes_skrining);
+
+        layoutTensiFilled = view.findViewById(R.id.layout_tensi_filled);
+        layoutTensiEmpty = view.findViewById(R.id.layout_tensi_empty);
+        tvTensiPressure = view.findViewById(R.id.tv_tensi_pressure);
+        tvTensiPulse = view.findViewById(R.id.tv_tensi_pulse);
+        tvTensiDate = view.findViewById(R.id.tv_tensi_date);
+        btnLihatSemuaTensi = view.findViewById(R.id.btn_lihat_semua_tensi);
+        btnCatatTensi = view.findViewById(R.id.btn_catat_tensi);
+
         signOut.setOnClickListener(v -> {
             showLogoutDialog();
         });
 
+        // "Lihat Semua" skrining -> tab riwayat tes lengkap (CheckFragment)
+        btnLihatSemuaSkrining.setOnClickListener(v -> {
+            Fragment checkFragment = CheckFragment.newInstance();
+            requireActivity().getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.nav_host_fragment_activity_main, checkFragment)
+                    .addToBackStack(null)
+                    .commit();
+        });
+        btnMulaiTesSkrining.setOnClickListener(v ->
+                startActivity(new Intent(getActivity(), QuizInstructionActivity.class)));
+
+        // "Lihat Semua" tensi & CTA catat tensi -> halaman Tekanan Darah
+        btnLihatSemuaTensi.setOnClickListener(v ->
+                startActivity(new Intent(getActivity(), BloodPressureActivity.class)));
+        btnCatatTensi.setOnClickListener(v ->
+                startActivity(new Intent(getActivity(), BloodPressureActivity.class)));
+
+        setupSkriningSummary();
+        setupTensiSummary();
+
         getData();
         return view;
 
+    }
+
+    private void setupSkriningSummary() {
+        quizViewModel.getQuizHistoryLiveData().observe(getViewLifecycleOwner(), quizHistoryItems -> {
+            if (quizHistoryItems != null && !quizHistoryItems.isEmpty()) {
+                // Item pertama = paling baru (sudah di-sort desc di QuizRepository)
+                QuizHistoryItem latest = quizHistoryItems.get(0);
+                tvSkriningKlasifikasi.setText(latest.getClassifiedScore());
+                tvSkriningScore.setText(getString(R.string.tes_skrining) + " - Skor: " + latest.getTotalScore());
+                tvSkriningDate.setText(latest.getDate());
+                layoutSkriningFilled.setVisibility(View.VISIBLE);
+                layoutSkriningEmpty.setVisibility(View.GONE);
+            } else {
+                layoutSkriningFilled.setVisibility(View.GONE);
+                layoutSkriningEmpty.setVisibility(View.VISIBLE);
+            }
+        });
+        if (userId != null) {
+            quizViewModel.fetchQuizHistory(userId);
+        }
+    }
+
+    private void setupTensiSummary() {
+        bloodPresViewModel.getLatestBloodPressureData().observe(getViewLifecycleOwner(), latest -> {
+            if (latest != null) {
+                tvTensiPressure.setText(latest.getBloodPressure() + " mmHg");
+                tvTensiPulse.setText("Nadi: " + latest.getPulse() + " bpm");
+                tvTensiDate.setText(latest.getBpDate());
+                layoutTensiFilled.setVisibility(View.VISIBLE);
+                layoutTensiEmpty.setVisibility(View.GONE);
+            } else {
+                layoutTensiFilled.setVisibility(View.GONE);
+                layoutTensiEmpty.setVisibility(View.VISIBLE);
+            }
+        });
     }
 
     public void showLogoutDialog() {
@@ -119,6 +219,9 @@ public class ProfileHealthFragment extends Fragment {
         super.onResume();
         profileViewModel.fetchUser();
         getData();
+        if (userId != null) {
+            quizViewModel.fetchQuizHistory(userId);
+        }
         if (profileMedHistory != null) {
             profileMedHistory.post(() -> {
                 profileMedHistory.scrollTo(0, 0);
