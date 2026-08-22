@@ -127,24 +127,43 @@
                 app:layout_constraintTop_toBottomOf="@id/tv_reminder_date"
                 app:layout_constraintStart_toEndOf="@id/img_reminder"/>
 
-            <Spinner
-                android:id="@+id/dropdown_reminder_filter"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="14dp"
-                android:elevation="14dp"
-                app:elevation="14dp"
-                android:spinnerMode="dropdown"
-                android:background="@drawable/rounded_shadow"
-                android:entries="@array/gender_array" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="8dp">
+
+                <Spinner
+                    android:id="@+id/dropdown_reminder_filter"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="14dp"
+                    android:elevation="14dp"
+                    app:elevation="14dp"
+                    android:spinnerMode="dropdown"
+                    android:background="@drawable/rounded_shadow"
+                    android:entries="@array/filter_reminder" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_lihat_riwayat"
+                    style="@style/BlueRoundButtonNoOutline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:text="@string/lihat_riwayat"
+                    android:textSize="14sp" />
+            </LinearLayout>
 
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:translationY="-25dp"
+                android:layout_marginTop="10dp"
                 android:background="#E0E5E9"
-                android:paddingTop="35dp">
+                android:paddingTop="16dp">
 
                 <TextView
                     android:id="@+id/tv_no_data"

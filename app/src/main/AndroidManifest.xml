@@ -62,6 +62,9 @@
             android:name=".ui.reminder.ReminderActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.reminder.RiwayatReminderActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.news.NewsContentActivity"
             android:exported="false" />
         <activity

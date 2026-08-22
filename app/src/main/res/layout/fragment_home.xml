@@ -19,62 +19,77 @@
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="18dp"
-                android:paddingBottom="16dp"
-                android:paddingTop="30dp">
+                android:paddingHorizontal="20dp"
+                android:paddingBottom="18dp"
+                android:paddingTop="30dp"
+                android:background="@color/white">
                 <TextView
                     android:id="@+id/txt_welocme"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Selamat Datang"
+                    android:text="@string/selamat_datang_home"
                     android:fontFamily="@font/inter_semibold"
-                    android:textSize="18sp"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/darker_gray"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintBottom_toTopOf="@id/txt_name"/>
                 <TextView
                     android:id="@+id/txt_name"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:text="Nama"
                     android:textSize="22sp"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginEnd="12dp"
                     android:fontFamily="@font/inter_bold"
+                    android:textColor="@android:color/black"
+                    android:maxLines="2"
+                    android:ellipsize="end"
                     app:layout_constraintTop_toBottomOf="@id/txt_welocme"
                     app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/stroke_view_container"
                     app:layout_constraintBottom_toBottomOf="parent"/>
                 <RelativeLayout
+                    android:id="@+id/stroke_view_container"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:gravity="center"
-                    android:layout_marginTop="5dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent">
                     <View
                         android:id="@+id/stroke_view"
-                        android:layout_width="73dp"
-                        android:layout_height="73dp"
+                        android:layout_width="66dp"
+                        android:layout_height="66dp"
                         android:background="@drawable/outline_circle"
                         android:layout_centerInParent="true" />
                     <de.hdodenhof.circleimageview.CircleImageView
                         android:id="@+id/profile_image_home"
-                        android:layout_width="70dp"
-                        android:layout_height="70dp"
+                        android:layout_width="62dp"
+                        android:layout_height="62dp"
                         android:layout_centerInParent="true"
                         android:src="@drawable/img" />
                 </RelativeLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>
 
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginHorizontal="20dp"
+                android:background="#E0E0E0" />
+
             <TextView
                 android:id="@+id/txt_beranda"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingVertical="16dp"
+                android:paddingTop="22dp"
+                android:paddingBottom="10dp"
                 android:paddingHorizontal="18dp"
                 android:textSize="26sp"
                 android:fontFamily="@font/inter_semibold"
-                android:text="Beranda"/>
+                android:text="@string/beranda_title"/>
 
             <androidx.cardview.widget.CardView
                 android:id="@+id/card_reminder"
@@ -97,7 +112,7 @@
                         android:layout_height="wrap_content"
                         android:textSize="22sp"
                         android:fontFamily="@font/inter_semibold"
-                        android:text="Pengingat"/>
+                        android:text="@string/reminder"/>
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -141,7 +156,7 @@
                         android:layout_gravity="center"
                         android:backgroundTint="@color/blue2"
                         android:textSize="18sp"
-                        android:text="Atur Pengingat"/>
+                        android:text="@string/atur_pengingat"/>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -165,7 +180,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="20dp"
-                    android:text="Tekanan Darah"
+                    android:text="@string/tekanan_darah"
                     android:fontFamily="@font/inter_semibold"
                     android:textSize="26sp"
                     app:layout_constraintTop_toTopOf="parent"
@@ -181,7 +196,7 @@
                     android:backgroundTint="@color/blue2"
                     android:fontFamily="@font/inter_bold"
                     android:paddingHorizontal="32dp"
-                    android:text="Catat Tensi"
+                    android:text="@string/catat_tensi"
                     android:textSize="18sp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toEndOf="@id/img_tensi"
@@ -237,8 +252,7 @@
                 <androidx.cardview.widget.CardView
                     android:id="@+id/card_tensi_dua"
                     android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:padding="100dp"
+                    android:layout_height="wrap_content"
                     app:layout_constraintHorizontal_weight="1"
                     android:layout_marginHorizontal="6dp"
                     android:layout_marginVertical="16dp"
@@ -283,8 +297,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="24dp"
-                android:layout_marginTop="-8dp"
-                android:layout_marginBottom="4dp"
+                android:layout_marginBottom="8dp"
                 android:gravity="center_horizontal"
                 android:text=""
                 android:textSize="12sp"
@@ -335,7 +348,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginVertical="4dp"
                         android:backgroundTint="@color/blue2"
-                        android:text="Cari Layanan Kesehatan"
+                        android:text="@string/cari_layanan_kesehatan"
                         android:textSize="18sp"
                         android:fontFamily="@font/inter_bold"
                         android:paddingVertical="10dp"

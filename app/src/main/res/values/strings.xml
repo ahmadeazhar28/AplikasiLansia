@@ -121,6 +121,13 @@
     <string name="health_search_hint">Pilih Kota Anda</string>
     <string name="lihat_detail">Lihat Detail</string>
     <string name="riwayat">Riwayat</string>
+    <string name="riwayat_pengingat">Riwayat Pengingat</string>
+    <string name="lihat_riwayat">Lihat Riwayat</string>
+    <string name="belum_ada_riwayat">Belum ada riwayat pengingat.</string>
+    <string name="selamat_datang_home">Selamat Datang</string>
+    <string name="beranda_title">Beranda</string>
+    <string name="atur_pengingat">Atur Pengingat</string>
+    <string name="cari_layanan_kesehatan">Cari Layanan Kesehatan</string>
     <string name="mulai_cek">Mulai Tes</string>
     <string name="cek_depresi_text_2">Mulailah perjalanan Anda menuju kesejahteraan mental dengan satu tes sederhana. Mulai sekarang dengan Nula</string>
     <string name="cek_depresi_text_1">Tidak yakin dengan perasaan Anda?</string>
@@ -201,7 +208,6 @@
         <item>Hari Ini</item>
         <item>Besok</item>
         <item>Yang Akan Datang</item>
-        <item>Riwayat</item>
     </string-array>
 
     <string-array name="day_array">

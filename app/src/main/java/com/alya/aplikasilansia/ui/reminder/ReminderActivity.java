@@ -64,6 +64,12 @@ public class ReminderActivity extends AppCompatActivity implements View.OnClickL
             Button btnCreateReminder = findViewById(R.id.btn_add_reminder);
             btnCreateReminder.setOnClickListener(this);
 
+            Button btnLihatRiwayat = findViewById(R.id.btn_lihat_riwayat);
+            btnLihatRiwayat.setOnClickListener(v -> {
+                Intent intent = new Intent(ReminderActivity.this, RiwayatReminderActivity.class);
+                startActivity(intent);
+            });
+
             filterSpinner = findViewById(R.id.dropdown_reminder_filter);
             setupSpinner(filterSpinner);
 
@@ -140,44 +146,9 @@ public class ReminderActivity extends AppCompatActivity implements View.OnClickL
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
         Date now = new Date();
 
-        // Riwayat: reminder yang timestamp-nya sudah lewat, ditampilkan
-        // terbaru dulu. ReminderRepository sekarang tidak lagi otomatis
-        // membuang data lama (supaya Riwayat bisa menampilkannya), jadi
-        // pemisahan upcoming vs riwayat dilakukan di sini.
-        if ("Riwayat".equals(selectedFilter)) {
-            List<Reminder> pastReminders = new ArrayList<>();
-            for (Reminder reminder : reminders) {
-                try {
-                    Date reminderDate = sdf.parse(reminder.getTimestamp());
-                    if (reminderDate != null && reminderDate.before(now)) {
-                        pastReminders.add(reminder);
-                    }
-                } catch (ParseException e) {
-                    Log.e(TAG, "Error parsing date riwayat: " + e.getMessage());
-                }
-            }
-            pastReminders.sort((r1, r2) -> {
-                try {
-                    Date date1 = sdf.parse(r1.getTimestamp());
-                    Date date2 = sdf.parse(r2.getTimestamp());
-                    return date2.compareTo(date1); // terbaru dulu
-                } catch (ParseException e) {
-                    return 0;
-                }
-            });
-
-            if (pastReminders.isEmpty()) {
-                tvNoData.setText("Belum ada riwayat pengingat");
-                tvNoData.setVisibility(View.VISIBLE);
-            } else {
-                tvNoData.setVisibility(View.GONE);
-                items.add("Riwayat");
-                items.addAll(pastReminders);
-            }
-            return items;
-        }
-
-        // Filter selain Riwayat: cuma reminder yang masih akan datang
+        // Filter selain "Semua Pengingat" dkk: cuma reminder yang masih akan datang.
+        // Riwayat (reminder yang sudah lewat) sekarang punya halamannya sendiri di
+        // RiwayatReminderActivity, jadi tidak lagi ditangani di sini.
         List<Reminder> upcomingReminders = new ArrayList<>();
         for (Reminder reminder : reminders) {
             try {
